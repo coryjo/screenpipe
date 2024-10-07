@@ -1,8 +1,7 @@
 # Makefile for Building and Installing Screenpipe on MacOS
 
 # Variables
-REPO_URL := https://github.com/mediar-ai/screenpipe.git
-PROJECT_DIR := screenpipe
+PROJECT_DIR := $(shell pwd)
 DESKTOP_APP_DIR := screenpipe-app-tauri
 VSCODE_SETTINGS := .vscode/settings.json
 
@@ -18,9 +17,9 @@ YELLOW := \033[0;33m
 RED := \033[0;31m
 NC := \033[0m # No Color
 
-.PHONY: all install-deps install-rust check-brew clone build-cli build-desktop setup-signing generate-private-key encode-key configure-vscode run clean help
+.PHONY: all install-deps install-rust check-brew build-cli build-desktop setup-signing generate-private-key encode-key configure-vscode run clean help
 
-all: install-deps clone build-cli setup-signing build-desktop
+all: install-deps build-cli setup-signing build-desktop
 	@echo "$(GREEN)All tasks completed successfully!$(NC)"
 
 # Install Homebrew dependencies
@@ -56,23 +55,14 @@ install-rust:
 		echo "$(GREEN)Rust is already installed.$(NC)"; \
 	fi
 
-# Clone the screenpipe repository
-clone:
-	@echo "$(YELLOW)Cloning the Screenpipe repository...$(NC)"
-	@if [ -d "$(PROJECT_DIR)" ]; then \
-		echo "$(GREEN)Repository already cloned. Skipping...$(NC)"; \
-	else \
-		git clone $(REPO_URL); \
-	fi
-
 # Build the CLI
-build-cli: clone
+build-cli:
 	@echo "$(YELLOW)Building the Screenpipe CLI...$(NC)"
-	cd $(PROJECT_DIR) && cargo build --release --features metal
+	cargo build --release --features metal
 	@echo "$(GREEN)CLI built successfully.$(NC)"
 
 # Setup Signing (Generate and Encode Private Key)
-setup-signing: build-cli generate-private-key encode-key
+setup-signing: generate-private-key encode-key
 
 # Generate Private Key if it does not exist
 generate-private-key:
@@ -105,34 +95,32 @@ encode-key:
 # Configure VSCode settings
 configure-vscode:
 	@echo "$(YELLOW)Configuring VSCode settings...$(NC)"
-	mkdir -p .vscode
-	cat > $(VSCODE_SETTINGS) <<EOL
-	{
-	"rust-analyzer.cargo.features": [
-		"metal",
-		"pipes"
-	],
-	"rust-analyzer.server.extraEnv": {
-		"DYLD_LIBRARY_PATH": "\${workspaceFolder}/screenpipe-vision/lib:\${env:DYLD_LIBRARY_PATH}",
-		"SCREENPIPE_APP_DEV": "true"
-	},
-	"rust-analyzer.cargo.extraEnv": {
-		"DYLD_LIBRARY_PATH": "\${workspaceFolder}/screenpipe-vision/lib:\${env:DYLD_LIBRARY_PATH}",
-		"SCREENPIPE_APP_DEV": "true"
-	},
-	"terminal.integrated.env.osx": {
-		"DYLD_LIBRARY_PATH": "\${workspaceFolder}/screenpipe-vision/lib:\${env:DYLD_LIBRARY_PATH}",
-		"SCREENPIPE_APP_DEV": "true"
-	}
-	}
-	EOL
+	@mkdir -p .vscode
+	@echo '{\n\
+		"rust-analyzer.cargo.features": [\n\
+			"metal",\n\
+			"pipes"\n\
+		],\n\
+		"rust-analyzer.server.extraEnv": {\n\
+			"DYLD_LIBRARY_PATH": "$${workspaceFolder}/screenpipe-vision/lib:$${env:DYLD_LIBRARY_PATH}",\n\
+			"SCREENPIPE_APP_DEV": "true"\n\
+		},\n\
+		"rust-analyzer.cargo.extraEnv": {\n\
+			"DYLD_LIBRARY_PATH": "$${workspaceFolder}/screenpipe-vision/lib:$${env:DYLD_LIBRARY_PATH}",\n\
+			"SCREENPIPE_APP_DEV": "true"\n\
+		},\n\
+		"terminal.integrated.env.osx": {\n\
+			"DYLD_LIBRARY_PATH": "$${workspaceFolder}/screenpipe-vision/lib:$${env:DYLD_LIBRARY_PATH}",\n\
+			"SCREENPIPE_APP_DEV": "true"\n\
+		}\n\
+}' > $(VSCODE_SETTINGS)
 	@echo "$(GREEN)VSCode settings configured.$(NC)"
 
 # Build the desktop application
 build-desktop: setup-signing configure-vscode
 	@echo "$(YELLOW)Building the Desktop Application...$(NC)"
 	# Export the environment variable and build
-	cd $(PROJECT_DIR)/$(DESKTOP_APP_DIR) && \
+	cd $(DESKTOP_APP_DIR) && \
 	export $(ENV_VAR_NAME)=$$(cat "$(BASE64_KEY_PATH)") && \
 	bun install && \
 	bun scripts/pre_build.js && \
@@ -142,21 +130,20 @@ build-desktop: setup-signing configure-vscode
 # Run the CLI
 run:
 	@echo "$(YELLOW)Running the Screenpipe CLI...$(NC)"
-	./$(PROJECT_DIR)/target/release/screenpipe
+	./target/release/screenpipe
 
 # Clean build artifacts
 clean:
 	@echo "$(YELLOW)Cleaning build artifacts...$(NC)"
-	cd $(PROJECT_DIR) && cargo clean
+	cargo clean
 	@echo "$(GREEN)Cleaned successfully.$(NC)"
 
 # Display help
 help:
 	@echo "Available Makefile targets:"
-	@echo "  all             - Install dependencies, clone repo, build CLI, setup signing, and build Desktop App"
+	@echo "  all             - Install dependencies, build CLI, setup signing, and build Desktop App"
 	@echo "  install-deps    - Install Homebrew dependencies"
 	@echo "  install-rust    - Install Rust using rustup"
-	@echo "  clone           - Clone the Screenpipe repository"
 	@echo "  build-cli       - Build the Screenpipe CLI"
 	@echo "  setup-signing   - Setup signing keys for Tauri"
 	@echo "  generate-private-key - Generate a new private key if it doesn't exist"

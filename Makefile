@@ -132,6 +132,13 @@ run:
 	@echo "$(YELLOW)Running the Screenpipe CLI...$(NC)"
 	./target/release/screenpipe
 
+# Install the CLI
+install:
+	@echo "$(YELLOW)Installing the executable to ~/bin...$(NC)"
+	@mkdir -p ~/bin
+	@cp ./target/release/screenpipe ~/bin
+	@echo "$(GREEN)Installed successfully.$(NC)"
+
 # Clean build artifacts
 clean:
 	@echo "$(YELLOW)Cleaning build artifacts...$(NC)"

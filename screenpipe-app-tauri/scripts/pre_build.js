@@ -309,6 +309,13 @@ if (platform == 'macos') {
 
 
 		} else if (arch === 'x86_64') {
+
+			// force skip and just output message as such
+			if (true) {
+				console.log("Skipping x86_64 screenpipe binary");
+				continue
+			}
+
 			// copy screenpipe binary (more recent one)
 			const paths = [
 				"../../target/x86_64-apple-darwin/release/screenpipe",

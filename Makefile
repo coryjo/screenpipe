@@ -17,7 +17,7 @@ YELLOW := \033[0;33m
 RED := \033[0;31m
 NC := \033[0m # No Color
 
-.PHONY: all install-deps install-rust check-brew build-cli build-desktop setup-signing generate-private-key encode-key configure-vscode run clean help
+.PHONY: all install install-deps install-rust check-brew build-cli install-cli build-desktop setup-signing generate-private-key encode-key configure-vscode run clean help
 
 all: install-deps build-cli setup-signing build-desktop
 	@echo "$(GREEN)All tasks completed successfully!$(NC)"
@@ -60,6 +60,16 @@ build-cli:
 	@echo "$(YELLOW)Building the Screenpipe CLI...$(NC)"
 	cargo build --release --features metal
 	@echo "$(GREEN)CLI built successfully.$(NC)"
+
+# Install the Screenpipe CLI
+install-cli: build-cli
+	@echo "$(YELLOW)Installing the Screenpipe CLI...$(NC)"
+	cp target/release/screenpipe ~/bin/screenpipe
+	@echo "$(GREEN)Screenpipe CLI installed successfully.$(NC)"
+
+# Install (build all and install CLI)
+install: all install-cli
+
 
 # Setup Signing (Generate and Encode Private Key)
 setup-signing: generate-private-key encode-key
@@ -132,13 +142,6 @@ run:
 	@echo "$(YELLOW)Running the Screenpipe CLI...$(NC)"
 	./target/release/screenpipe
 
-# Install the CLI
-install:
-	@echo "$(YELLOW)Installing the executable to ~/bin...$(NC)"
-	@mkdir -p ~/bin
-	@cp ./target/release/screenpipe ~/bin
-	@echo "$(GREEN)Installed successfully.$(NC)"
-
 # Clean build artifacts
 clean:
 	@echo "$(YELLOW)Cleaning build artifacts...$(NC)"
@@ -152,6 +155,7 @@ help:
 	@echo "  install-deps    - Install Homebrew dependencies"
 	@echo "  install-rust    - Install Rust using rustup"
 	@echo "  build-cli       - Build the Screenpipe CLI"
+	@echo "  install-cli     - Install the Screenpipe CLI"
 	@echo "  setup-signing   - Setup signing keys for Tauri"
 	@echo "  generate-private-key - Generate a new private key if it doesn't exist"
 	@echo "  encode-key      - Encode the private key to Base64"
